@@ -9,18 +9,9 @@
       content="Paste a Content-Security-Policy header and see every directive categorised, explained, and risk-checked. Runs fully locally."
     />
     <title>CSP Analyser — understand your Content-Security-Policy</title>
-    <script>
-      // Apply stored theme before paint to avoid a flash of the wrong theme.
-      (function () {
-        try {
-          var t = localStorage.getItem("theme");
-          var dark = !t || t === "dark" || (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
-          var root = document.documentElement;
-          root.classList.toggle("dark", dark);
-          root.style.colorScheme = dark ? "dark" : "light";
-        } catch (e) {}
-      })();
-    </script>
+    <!-- External (not inline) so a strict script-src 'self' covers it. Blocking
+         + first in <head> so the theme is applied before first paint. -->
+    <script src="/theme.js"></script>
   </head>
   <body>
     <div id="root"></div>
