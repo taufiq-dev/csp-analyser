@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "csp-analyser",
+  "compatibility_date": "2026-06-03",
+  // Static-assets-only Worker: no server code, just serve the Vite build output.
+  "assets": {
+    "directory": "./dist",
+    // React Router runs client-side, so serve index.html for any unknown path
+    // (deep links / refresh) instead of a 404.
+    "not_found_handling": "single-page-application"
+  }
+}
