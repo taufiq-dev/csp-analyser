@@ -1,6 +1,7 @@
 import { useLoaderData } from "react-router-dom"
 import type { LoaderFunctionArgs } from "react-router-dom"
 import { FileWarning, Layers } from "lucide-react"
+import { CopyReportButton } from "@/components/copy-report-button"
 import { PolicyInput } from "@/components/policy-input"
 import { ScoreCard } from "@/components/score-card"
 import { ShareButton } from "@/components/share-button"
@@ -8,6 +9,7 @@ import { SummaryBar } from "@/components/summary-bar"
 import { CategorySection } from "@/components/category-section"
 import { analyze } from "@/lib/csp/parse"
 import { CATEGORY_INFO, CATEGORY_ORDER } from "@/lib/csp/directives"
+import { decompressPolicy } from "@/lib/url-codec"
 import type { Analysis } from "@/lib/csp/types"
 
 interface LoaderData {
@@ -15,9 +17,21 @@ interface LoaderData {
   analysis: Analysis | null
 }
 
-export function analyzerLoader({ request }: LoaderFunctionArgs): LoaderData {
+export async function analyzerLoader({
+  request,
+}: LoaderFunctionArgs): Promise<LoaderData> {
   const url = new URL(request.url)
-  const policy = url.searchParams.get("policy") ?? ""
+  let policy = ""
+  // Compressed share link (?z=) takes precedence, then the plain ?policy=.
+  const z = url.searchParams.get("z")
+  if (z) {
+    try {
+      policy = await decompressPolicy(z)
+    } catch {
+      policy = ""
+    }
+  }
+  if (!policy) policy = url.searchParams.get("policy") ?? ""
   return { policy, analysis: policy.trim() ? analyze(policy) : null }
 }
 
@@ -59,7 +73,10 @@ function Results({ analysis }: { analysis: Analysis }) {
           </span>{" "}
           active directives
         </h2>
-        <ShareButton />
+        <div className="flex items-center gap-2">
+          <CopyReportButton analysis={analysis} />
+          <ShareButton policy={analysis.input} />
+        </div>
       </div>
 
       <ScoreCard analysis={analysis} />

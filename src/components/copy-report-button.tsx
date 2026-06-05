@@ -1,49 +1,43 @@
 import { useState } from "react"
-import { Check, Link2 } from "lucide-react"
+import { Check, FileText } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { copyText } from "@/lib/clipboard"
-import { compressPolicy } from "@/lib/url-codec"
+import { buildMarkdownReport } from "@/lib/csp/report"
+import type { Analysis } from "@/lib/csp/types"
 
-/**
- * Copies a compressed, self-contained shareable link (?z=<gzip>). Smaller than
- * the plain ?policy= URL, still 100% local — the policy lives in the link,
- * nothing is stored anywhere.
- */
-export function ShareButton({ policy }: { policy: string }) {
+/** Copies the full analysis as a Markdown report. */
+export function CopyReportButton({ analysis }: { analysis: Analysis }) {
   const [copied, setCopied] = useState(false)
 
   async function copy() {
-    try {
-      const token = await compressPolicy(policy)
-      const url = `${window.location.origin}${window.location.pathname}?z=${token}`
-      if (!(await copyText(url))) throw new Error("copy failed")
+    const md = buildMarkdownReport(analysis)
+    if (await copyText(md)) {
       setCopied(true)
-      toast.success("Shareable link copied", {
-        description: "Compressed and self-contained — nothing is stored.",
+      toast.success("Report copied as Markdown", {
+        description: "Paste it into an issue, PR, or doc.",
       })
       window.setTimeout(() => setCopied(false), 2000)
-    } catch {
-      toast.error("Couldn’t copy the link")
+    } else {
+      toast.error("Couldn’t copy the report")
     }
   }
 
   return (
     <Button variant="outline" size="sm" onClick={copy} className="gap-1.5">
-      {/* fixed-size icon slot: no layout shift on swap (Emil) */}
       <span className="relative grid size-4 place-items-center">
         <Check
           className={`absolute size-4 transition-all duration-200 ease-out ${
             copied ? "scale-100 opacity-100" : "scale-50 opacity-0"
           }`}
         />
-        <Link2
+        <FileText
           className={`absolute size-4 transition-all duration-200 ease-out ${
             copied ? "scale-50 opacity-0" : "scale-100 opacity-100"
           }`}
         />
       </span>
-      {copied ? "Copied" : "Copy link"}
+      {copied ? "Copied" : "Copy report"}
     </Button>
   )
 }
