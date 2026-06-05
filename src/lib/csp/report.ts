@@ -11,6 +11,15 @@ const SEV_EMOJI: Record<Severity, string> = {
 
 const APP_URL = "https://csp-analyser.taufiq-dev.workers.dev"
 
+/**
+ * Wrap HTML-tag-looking tokens (e.g. <script>, <object>, <base>) in code spans
+ * so Markdown renderers — and strict preview CSPs like VS Code's — treat them
+ * as literal text instead of real HTML that gets stripped/blocked.
+ */
+function mdText(s: string): string {
+  return s.replace(/<\/?[a-zA-Z][a-zA-Z0-9-]*\s*\/?>/g, (m) => `\`${m}\``)
+}
+
 /** Render a full, shareable analysis as Markdown. */
 export function buildMarkdownReport(analysis: Analysis): string {
   const s = scorePolicy(analysis)
@@ -18,7 +27,7 @@ export function buildMarkdownReport(analysis: Analysis): string {
 
   out.push("# CSP Analysis Report", "")
   out.push(`**Grade: ${s.grade} — ${s.posture}** · ${s.score}/100`, "")
-  out.push(`> ${s.blurb}`, "")
+  out.push(`> ${mdText(s.blurb)}`, "")
 
   out.push("## Policy", "", "```", analysis.input.trim(), "```", "")
 
@@ -30,9 +39,9 @@ export function buildMarkdownReport(analysis: Analysis): string {
   if (s.issues.length) {
     for (const i of s.issues) {
       const dir = i.directive ? ` \`${i.directive}\`` : ""
-      out.push(`### ${SEV_EMOJI[i.severity]} ${SEVERITY_META[i.severity].label} — ${i.title}${dir}`, "")
-      out.push(i.detail, "")
-      out.push(`**Fix:** ${i.fix}`, "")
+      out.push(`### ${SEV_EMOJI[i.severity]} ${SEVERITY_META[i.severity].label} — ${mdText(i.title)}${dir}`, "")
+      out.push(mdText(i.detail), "")
+      out.push(`**Fix:** ${mdText(i.fix)}`, "")
     }
   } else {
     out.push("No weaknesses detected against the hardening checks. ✅", "")
